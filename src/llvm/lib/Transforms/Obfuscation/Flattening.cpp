@@ -400,6 +400,8 @@ PreservedAnalyses Flattening::run(Module &M, ModuleAnalysisManager &AM) {
     if (&f == updateFunc)
       continue;
     if (EnabledFlag || readAnnotate(f).find("flatten") != std::string::npos) {
+      
+      errs() << "try flattern: "<<f.getName().str()<<"\n";
       doFlatten(&f, 0, updateFunc);
     }
   }

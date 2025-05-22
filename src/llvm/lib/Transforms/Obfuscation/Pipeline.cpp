@@ -61,6 +61,7 @@ ModulePassManager buildObfuscationPipeline() {
   for (auto pass : Passes) {
     errs() << pass << "\n";
     if (EnableIRFlattening || pass == "fla") {
+      errs() << "add fla pass\n";
       MPM.addPass(Flattening(EnableIRFlattening));
     } else if (EnableIRStringEncryption || pass == "gvenc") {
       MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));

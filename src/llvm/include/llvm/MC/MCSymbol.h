@@ -249,7 +249,9 @@ public:
 
   /// isInSection - Check if this symbol is defined in some section (i.e., it
   /// is defined but not absolute).
-  bool isInSection() const { return isDefined() && !isAbsolute(); }
+  bool isInSection() const {
+    return isDefined() && !isAbsolute();
+  }
 
   /// isUndefined - Check if this symbol undefined (i.e., implicitly defined).
   bool isUndefined(bool SetUsed = true) const {
@@ -257,7 +259,9 @@ public:
   }
 
   /// isAbsolute - Check if this is an absolute symbol.
-  bool isAbsolute() const { return getFragment() == AbsolutePseudoFragment; }
+  bool isAbsolute() const {
+    return getFragment() == AbsolutePseudoFragment;
+  }
 
   /// Get the section associated with a defined, non-absolute symbol.
   MCSection &getSection() const {
@@ -291,7 +295,9 @@ public:
   /// @{
 
   /// isVariable - Check if this is a variable symbol.
-  bool isVariable() const { return SymbolContents == SymContentsVariable; }
+  bool isVariable() const {
+    return SymbolContents == SymContentsVariable;
+  }
 
   /// getVariableValue - Get the value for variable symbols.
   const MCExpr *getVariableValue(bool SetUsed = true) const {
@@ -305,10 +311,14 @@ public:
   /// @}
 
   /// Get the (implementation defined) index.
-  uint32_t getIndex() const { return Index; }
+  uint32_t getIndex() const {
+    return Index;
+  }
 
   /// Set the (implementation defined) index.
-  void setIndex(uint32_t Value) const { Index = Value; }
+  void setIndex(uint32_t Value) const {
+    Index = Value;
+  }
 
   bool isUnset() const { return SymbolContents == SymContentsUnset; }
 

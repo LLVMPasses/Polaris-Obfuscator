@@ -11,6 +11,9 @@ struct IndirectBlockInfo {
   unsigned RandomKey;
 };
 struct IndirectBranch : PassInfoMixin<IndirectBranch> {
+  bool EnabledFlag;
+  IndirectBranch() : EnabledFlag(false) {}
+  explicit IndirectBranch(bool Enabled) : EnabledFlag(Enabled) {}
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
   void process(Function &F);
   static bool isRequired() { return true; }

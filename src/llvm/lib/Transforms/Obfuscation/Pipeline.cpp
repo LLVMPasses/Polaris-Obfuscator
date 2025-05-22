@@ -20,6 +20,37 @@ using namespace polaris;
 static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
                                     cl::desc("Obfuscation passes"));
 
+
+
+//static cl::opt<bool>
+//    EnableIRObfusaction("irobf", cl::init(false), cl::NotHidden,
+//                        cl::desc("Enable IR Code Obfuscation."),
+//                        cl::ZeroOrMore);
+static cl::opt<bool>
+    EnableIndirectBr("irobf-indbr", cl::init(false), cl::NotHidden,
+                     cl::desc("Enable IR Indirect Branch Obfuscation."),
+                     cl::ZeroOrMore);
+
+//static cl::opt<bool>
+//    EnableIndirectCall("irobf-icall", cl::init(false), cl::NotHidden,
+//                       cl::desc("Enable IR Indirect Call Obfuscation."),
+//                       cl::ZeroOrMore);
+
+//static cl::opt<bool> EnableIndirectGV(
+//    "irobf-indgv", cl::init(false), cl::NotHidden,
+//    cl::desc("Enable IR Indirect Global Variable Obfuscation."),
+//    cl::ZeroOrMore);
+//
+static cl::opt<bool> EnableIRFlattening(
+    "irobf-cff", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR Control Flow Flattening Obfuscation."), cl::ZeroOrMore);
+
+static cl::opt<bool>
+    EnableIRStringEncryption("irobf-cse", cl::init(false), cl::NotHidden,
+                             cl::desc("Enable IR Constant String Encryption."), cl::ZeroOrMore);
+
+
+
 struct LowerSwitchWrapper : LowerSwitchPass {
   static bool isRequired() { return true; }
 };
@@ -29,17 +60,18 @@ ModulePassManager buildObfuscationPipeline() {
 
   for (auto pass : Passes) {
     errs() << pass << "\n";
-    if (pass == "fla") {
-      MPM.addPass(Flattening());
-    } else if (pass == "gvenc") {
-      MPM.addPass(GlobalsEncryption());
-    } else if (pass == "indbr") {
+    if (EnableIRFlattening || pass == "fla") {
+      MPM.addPass(Flattening(EnableIRFlattening));
+    } else if (EnableIRStringEncryption || pass == "gvenc") {
+      MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
+    } else if (EnableIndirectBr || pass == "indbr") {
       FunctionPassManager FPM;
-      FPM.addPass(IndirectBranch());
+      FPM.addPass(IndirectBranch(EnableIndirectBr));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "indcall") {
       FunctionPassManager FPM;
       FPM.addPass(IndirectCall());
+      IndirectCall().isRequired()
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "alias") {
       MPM.addPass(AliasAccess());

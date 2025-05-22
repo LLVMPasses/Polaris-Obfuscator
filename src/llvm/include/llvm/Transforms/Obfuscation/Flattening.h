@@ -7,6 +7,10 @@ using namespace llvm;
 namespace polaris {
 
 struct Flattening : PassInfoMixin<Flattening> {
+  bool EnabledFlag;
+  Flattening() : EnabledFlag(false) {}
+  explicit Flattening(bool Enabled) : Flattening(Enabled) {}
+
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
 
   static bool isRequired() { return true; }

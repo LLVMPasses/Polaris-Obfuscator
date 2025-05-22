@@ -108,7 +108,7 @@ void IndirectBranch::process(Function &F) {
 }
 PreservedAnalyses IndirectBranch::run(Function &F,
                                       FunctionAnalysisManager &AM) {
-  if (readAnnotate(F).find("indirectbr") != std::string::npos) {
+  if (EnabledFlag || readAnnotate(F).find("indirectbr") != std::string::npos) {
     process(F);
     return PreservedAnalyses::none();
   }

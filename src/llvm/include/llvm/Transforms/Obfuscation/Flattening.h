@@ -9,7 +9,7 @@ namespace polaris {
 struct Flattening : PassInfoMixin<Flattening> {
   bool EnabledFlag;
   Flattening() : EnabledFlag(false) {}
-  explicit Flattening(bool Enabled) : Flattening(Enabled) {}
+  explicit Flattening(bool Enabled) : EnabledFlag(Enabled) {}
 
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
 

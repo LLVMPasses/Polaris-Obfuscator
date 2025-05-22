@@ -71,7 +71,6 @@ ModulePassManager buildObfuscationPipeline() {
     } else if (pass == "indcall") {
       FunctionPassManager FPM;
       FPM.addPass(IndirectCall());
-      IndirectCall().isRequired()
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "alias") {
       MPM.addPass(AliasAccess());

@@ -84,36 +84,41 @@ ModulePassManager buildObfuscationPipeline() {
 
   for (auto pass : Passes) {
     //errs() << pass << "\n";
-    if (EnableIRFlattening || pass == "fla") {
+    if (pass == "fla") {
       errs() << "add fla pass\n";
       MPM.addPass(Flattening(EnableIRFlattening));
-    } else if (EnableIRStringEncryption || pass == "sobf") {
+    } else if (pass == "sobf") {
       errs() << "add sobf pass\n";
       MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
-    } else if (EnableIndirectBr || pass == "ibr") {
+    } else if (pass == "ibr") {
       errs() << "add ibr pass\n";
       FunctionPassManager FPM;
       FPM.addPass(IndirectBranch(EnableIndirectBr));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "icall") {
+      errs() << "add icall pass\n";
       FunctionPassManager FPM;
       FPM.addPass(IndirectCall(EnableIndirectCall));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "alias") {
       MPM.addPass(AliasAccess());
     } else if (pass == "bcf") {
+      errs() << "add bcf pass\n";
       FunctionPassManager FPM;
       FPM.addPass(BogusControlFlow2(EnableIRBogusControlFlow));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "ccc") {
       MPM.addPass(CustomCC());
     } else if (pass == "sub") {
+      errs() << "add sub pass\n";
       FunctionPassManager FPM;
       FPM.addPass(Substitution());
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "merge") {
+      errs() << "add merge pass\n";
       MPM.addPass(MergeFunction(EnableIRFunctionMerge));
     } else if (pass == "mba") {
+      errs() << "add mba pass\n";
       FunctionPassManager FPM;
       FPM.addPass(LinearMBA(EnableIRLinearMBA));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));

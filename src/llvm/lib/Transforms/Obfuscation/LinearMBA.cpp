@@ -72,7 +72,7 @@ std::vector<BitwiseTerm> TermType = {
     DEFINE_TERM_INFO(9),  DEFINE_TERM_INFO(10), DEFINE_TERM_INFO(11),
     DEFINE_TERM_INFO(12), DEFINE_TERM_INFO(13)};
 PreservedAnalyses LinearMBA::run(Function &F, FunctionAnalysisManager &AM) {
-  if (EnabledFlag || readAnnotate(F).find("linearmba") != std::string::npos) {
+  if (EnabledFlag || readAnnotate(F).find("mba") != std::string::npos) {
     process(F);
     return PreservedAnalyses::none();
   }

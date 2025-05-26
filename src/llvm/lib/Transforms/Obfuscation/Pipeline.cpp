@@ -32,13 +32,13 @@ static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
 //控制流混淆-跳转间接化
 static cl::opt<bool> EnableIndirectBr("irobf-indbr", cl::init(false), cl::NotHidden,
      cl::desc("Enable IR Indirect Branch Obfuscation."), cl::ZeroOrMore);
-static cl::alias PassesAlias("ibr", cl::desc("Alias for irobf-indbr"),
+static cl::alias AliasEnableIndirectBr("ibr", cl::desc("Alias for irobf-indbr"),
      cl::aliasopt(EnableIndirectBr));
 
 //控制流混淆-调用间接化
 static cl::opt<bool> EnableIndirectCall("irobf-icall", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR Indirect Call Obfuscation."), cl::ZeroOrMore);
-static cl::alias PassesAlias("icall", cl::desc("Alias for irobf-icall"),
+static cl::alias AliasEnableIndirectCall("icall", cl::desc("Alias for irobf-icall"),
     cl::aliasopt(EnableIndirectCall));
 
 ////控制流混淆-全局变量访问间接化
@@ -50,20 +50,20 @@ static cl::alias PassesAlias("icall", cl::desc("Alias for irobf-icall"),
 //控制流混淆-控制流平坦化
 static cl::opt<bool> EnableIRFlattening("irobf-cff", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR Control Flow Flattening Obfuscation."), cl::ZeroOrMore);
-static cl::alias PassesAlias("fla", cl::desc("Alias for irobf-cff"),
+static cl::alias AliasEnableIRFlattening("fla", cl::desc("Alias for irobf-cff"),
     cl::aliasopt(EnableIRFlattening));
 
 //控制流混淆-全局字符串加密
 static cl::opt<bool> EnableIRStringEncryption("irobf-cse", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR Constant String Encryption."), cl::ZeroOrMore);
-static cl::alias PassesAlias("sobf", cl::desc("Alias for irobf-cse"),
+static cl::alias AliasEnableIRStringEncryption("sobf", cl::desc("Alias for irobf-cse"),
     cl::aliasopt(EnableIRStringEncryption));
 
 //新增
 //控制流混淆-虚假控制流
 static cl::opt<bool> EnableIRBogusControlFlow("irobf-bcf", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR BogusControlFlow."), cl::ZeroOrMore);
-static cl::alias PassesAlias("sobf", cl::desc("Alias for irobf-bcf"),
+static cl::alias AliasEnableIRBogusControlFlow("sobf", cl::desc("Alias for irobf-bcf"),
     cl::aliasopt(EnableIRBogusControlFlow));
 
 //控制流混淆-线性MBA替换

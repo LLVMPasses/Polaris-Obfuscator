@@ -65,6 +65,9 @@ DEFINE_TERM_FUNC(13);
 #define TERM_TYPE_NUM 14
 
 struct LinearMBA : PassInfoMixin<LinearMBA> {
+  bool EnabledFlag;
+  LinearMBA() : EnabledFlag(false) {}
+  explicit LinearMBA(bool Enabled) : EnabledFlag(Enabled) {}
   PreservedAnalyses run(Function &M, FunctionAnalysisManager &AM);
   void process(Function &F);
   bool processAt(Instruction &Insn);

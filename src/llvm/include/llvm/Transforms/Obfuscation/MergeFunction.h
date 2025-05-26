@@ -12,6 +12,9 @@ struct MergeInfo {
   uint32_t SwitchVal = 0;
 };
 struct MergeFunction : PassInfoMixin<MergeFunction> {
+  bool EnabledFlag;
+  MergeFunction() : EnabledFlag(false) {}
+  explicit MergeFunction(bool Enabled) : EnabledFlag(Enabled) {}
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
   void process(Module &M);
   void merge(Module &M, std::vector<Function *> &ToMerge);

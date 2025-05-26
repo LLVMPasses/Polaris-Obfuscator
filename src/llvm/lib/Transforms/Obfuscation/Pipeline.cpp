@@ -17,8 +17,9 @@
 using namespace llvm;
 using namespace polaris;
 
+//通过opt数组控制可以插入pass顺序 提供默认顺序
 static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
-                                    cl::desc("Obfuscation passes"));
+                                    cl::desc("Obfuscation passes"), cl::list_init<std::string>({"fla", "bcf", "sobf", "igv", "ibr", "icall", "mba"}));
 
 
 
@@ -26,28 +27,51 @@ static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
 //    EnableIRObfusaction("irobf", cl::init(false), cl::NotHidden,
 //                        cl::desc("Enable IR Code Obfuscation."),
 //                        cl::ZeroOrMore);
-static cl::opt<bool>
-    EnableIndirectBr("irobf-indbr", cl::init(false), cl::NotHidden,
-                     cl::desc("Enable IR Indirect Branch Obfuscation."),
-                     cl::ZeroOrMore);
 
-//static cl::opt<bool>
-//    EnableIndirectCall("irobf-icall", cl::init(false), cl::NotHidden,
-//                       cl::desc("Enable IR Indirect Call Obfuscation."),
-//                       cl::ZeroOrMore);
+//ARKARI兼容开关
+//控制流混淆-跳转间接化
+static cl::opt<bool> EnableIndirectBr("irobf-indbr", cl::init(false), cl::NotHidden,
+     cl::desc("Enable IR Indirect Branch Obfuscation."), cl::ZeroOrMore);
+static cl::alias PassesAlias("ibr", cl::desc("Alias for irobf-indbr"),
+     cl::aliasopt(EnableIndirectBr));
 
-//static cl::opt<bool> EnableIndirectGV(
-//    "irobf-indgv", cl::init(false), cl::NotHidden,
-//    cl::desc("Enable IR Indirect Global Variable Obfuscation."),
-//    cl::ZeroOrMore);
-//
-static cl::opt<bool> EnableIRFlattening(
-    "irobf-cff", cl::init(false), cl::NotHidden,
+//控制流混淆-调用间接化
+static cl::opt<bool> EnableIndirectCall("irobf-icall", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR Indirect Call Obfuscation."), cl::ZeroOrMore);
+static cl::alias PassesAlias("icall", cl::desc("Alias for irobf-icall"),
+    cl::aliasopt(EnableIndirectCall));
+
+////控制流混淆-全局变量访问间接化
+//static cl::opt<bool> EnableIndirectGV("irobf-indgv", cl::init(false), cl::NotHidden,
+//    cl::desc("Enable IR Indirect Global Variable Obfuscation."),cl::ZeroOrMore);
+//static cl::alias PassesAlias("igv", cl::desc("Alias for irobf-indgv"),
+//    cl::aliasopt(EnableIndirectGV));
+
+//控制流混淆-控制流平坦化
+static cl::opt<bool> EnableIRFlattening("irobf-cff", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR Control Flow Flattening Obfuscation."), cl::ZeroOrMore);
+static cl::alias PassesAlias("fla", cl::desc("Alias for irobf-cff"),
+    cl::aliasopt(EnableIRFlattening));
 
-static cl::opt<bool>
-    EnableIRStringEncryption("irobf-cse", cl::init(false), cl::NotHidden,
-                             cl::desc("Enable IR Constant String Encryption."), cl::ZeroOrMore);
+//控制流混淆-全局字符串加密
+static cl::opt<bool> EnableIRStringEncryption("irobf-cse", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR Constant String Encryption."), cl::ZeroOrMore);
+static cl::alias PassesAlias("sobf", cl::desc("Alias for irobf-cse"),
+    cl::aliasopt(EnableIRStringEncryption));
+
+//新增
+//控制流混淆-虚假控制流
+static cl::opt<bool> EnableIRBogusControlFlow("irobf-bcf", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR BogusControlFlow."), cl::ZeroOrMore);
+static cl::alias PassesAlias("sobf", cl::desc("Alias for irobf-bcf"),
+    cl::aliasopt(EnableIRBogusControlFlow));
+
+//控制流混淆-线性MBA替换
+static cl::opt<bool> EnableIRLinearMBA("irobf-mba", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR Linear MBA substitution."), cl::ZeroOrMore);
+//控制流混淆-函数合并
+static cl::opt<bool> EnableIRFunctionMerge("irobf-merge", cl::init(false), cl::NotHidden,
+cl::desc("Enable IR Linear MBA substitution."), cl::ZeroOrMore);
 
 
 
@@ -59,25 +83,27 @@ ModulePassManager buildObfuscationPipeline() {
   ModulePassManager MPM;
 
   for (auto pass : Passes) {
-    errs() << pass << "\n";
+    //errs() << pass << "\n";
     if (EnableIRFlattening || pass == "fla") {
       errs() << "add fla pass\n";
       MPM.addPass(Flattening(EnableIRFlattening));
-    } else if (EnableIRStringEncryption || pass == "gvenc") {
+    } else if (EnableIRStringEncryption || pass == "sobf") {
+      errs() << "add sobf pass\n";
       MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
-    } else if (EnableIndirectBr || pass == "indbr") {
+    } else if (EnableIndirectBr || pass == "ibr") {
+      errs() << "add ibr pass\n";
       FunctionPassManager FPM;
       FPM.addPass(IndirectBranch(EnableIndirectBr));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
-    } else if (pass == "indcall") {
+    } else if (pass == "icall") {
       FunctionPassManager FPM;
-      FPM.addPass(IndirectCall());
+      FPM.addPass(IndirectCall(EnableIndirectCall));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "alias") {
       MPM.addPass(AliasAccess());
     } else if (pass == "bcf") {
       FunctionPassManager FPM;
-      FPM.addPass(BogusControlFlow2());
+      FPM.addPass(BogusControlFlow2(EnableIRBogusControlFlow));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "ccc") {
       MPM.addPass(CustomCC());
@@ -86,10 +112,10 @@ ModulePassManager buildObfuscationPipeline() {
       FPM.addPass(Substitution());
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "merge") {
-      MPM.addPass(MergeFunction());
+      MPM.addPass(MergeFunction(EnableIRFunctionMerge));
     } else if (pass == "mba") {
       FunctionPassManager FPM;
-      FPM.addPass(LinearMBA());
+      FPM.addPass(LinearMBA(EnableIRLinearMBA));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     }
   }

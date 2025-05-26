@@ -63,7 +63,7 @@ static cl::alias AliasEnableIRStringEncryption("sobf", cl::desc("Alias for irobf
 //控制流混淆-虚假控制流
 static cl::opt<bool> EnableIRBogusControlFlow("irobf-bcf", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR BogusControlFlow."), cl::ZeroOrMore);
-static cl::alias AliasEnableIRBogusControlFlow("sobf", cl::desc("Alias for irobf-bcf"),
+static cl::alias AliasEnableIRBogusControlFlow("bcf", cl::desc("Alias for irobf-bcf"),
     cl::aliasopt(EnableIRBogusControlFlow));
 
 //控制流混淆-线性MBA替换

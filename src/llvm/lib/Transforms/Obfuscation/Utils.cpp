@@ -39,6 +39,36 @@ std::string readAnnotate(Function &f) {
   }
   return (annotation);
 }
+
+bool toObfuscate(bool flag, Function &f,
+  std::string const &attribute){
+
+    std::string attr = attribute;
+    std::string attrNo = "no" + attr;
+    // Check if declaration
+    if (f.isDeclaration()) {
+      return false;
+    }
+    // 仅定义
+    if (f.hasAvailableExternallyLinkage() != 0) {
+      return false;
+    }
+
+    if (readAnnotate(f).find(attrNo) != std::string::npos){
+      return false;
+    }
+
+    if (readAnnotate(f).find(attr) != std::string::npos){
+      return true;
+    }
+
+    if (f.getName().startswith("llvm."))//混淆内部函数会崩 未知原因 先这样处理吧
+      return false;
+    
+    //返回默认值
+    return flag;
+}
+
 uint64_t getRandomNumber() {
   return (((uint64_t)rand()) << 32) | ((uint64_t)rand());
 }

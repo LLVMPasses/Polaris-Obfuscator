@@ -399,9 +399,7 @@ PreservedAnalyses Flattening::run(Module &M, ModuleAnalysisManager &AM) {
   for (Function &f : M) {
     if (&f == updateFunc)
       continue;
-    if (f.getName().startswith("llvm."))//混淆内部函数会崩 未知原因
-      continue;
-    if (EnabledFlag || readAnnotate(f).find("fla") != std::string::npos) {
+    if ( toObfuscate(EnabledFlag,f,"fla")) {
       
       errs() << "try flattern: "<<f.getName().str()<<"\n";
       doFlatten(&f, 0, updateFunc);

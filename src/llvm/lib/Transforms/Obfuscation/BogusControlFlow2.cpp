@@ -64,7 +64,7 @@ Value *createBogusCmp(BasicBlock *insertAfter) {
 PreservedAnalyses BogusControlFlow2::run(Function &F,
                                          FunctionAnalysisManager &AM) {
 
-  if (EnabledFlag || readAnnotate(F).find("bcf") != std::string::npos) {
+  if (if ( toObfuscate(EnabledFlag,f,"bcf"))) {
     std::vector<BasicBlock *> origBB;
     for (BasicBlock &BB : F) {
       origBB.push_back(&BB);

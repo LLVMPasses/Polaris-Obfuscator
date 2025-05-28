@@ -108,7 +108,7 @@ void IndirectBranch::process(Function &F) {
 }
 PreservedAnalyses IndirectBranch::run(Function &F,
                                       FunctionAnalysisManager &AM) {
-  if (EnabledFlag || readAnnotate(F).find("ibr") != std::string::npos) {
+  if (if ( toObfuscate(EnabledFlag,f,"ibr"))) {
     process(F);
     return PreservedAnalyses::none();
   }

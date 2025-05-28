@@ -4,6 +4,8 @@
 using namespace llvm;
 namespace polaris {
 std::string readAnnotate(Function &f);
+bool toObfuscate(bool flag, Function &f,
+    std::string const &attribute);  
 uint64_t getRandomNumber();
 unsigned int getUniqueNumber(std::vector<unsigned int> &rand_list);
 void getRandomNoRepeat(unsigned upper_bound, unsigned size,

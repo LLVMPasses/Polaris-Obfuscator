@@ -18,10 +18,13 @@ using namespace llvm;
 using namespace polaris;
 
 //通过opt数组控制可以插入pass顺序 提供默认顺序
+#if LLVM_VERSION_MAJOR >= 16
 static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
-                                    cl::desc("Obfuscation passes"), cl::list_init<std::string>({"fla", "bcf", "sobf", "igv", "ibr", "icall", "mba"}));
-
-
+                                    cl::desc("Obfuscation passes"), cl::list_init<std::string>({"fla", "bcf", "igv", "ibr", "icall", "mba"}));
+#else
+static cl::list<std::string> Passes("passes", cl::CommaSeparated, cl::Hidden,
+                                    cl::desc("Obfuscation passes"));
+#endif
 
 //static cl::opt<bool>
 //    EnableIRObfusaction("irobf", cl::init(false), cl::NotHidden,
@@ -81,15 +84,30 @@ struct LowerSwitchWrapper : LowerSwitchPass {
 
 ModulePassManager buildObfuscationPipeline() {
   ModulePassManager MPM;
-
+  bool sobf_added = false;
+  if (Passes.empty()) {
+    Passes.push_back("fla");
+    Passes.push_back("bcf");
+    //Passes.push_back("sobf");
+    Passes.push_back("igv");
+    Passes.push_back("icall");
+    Passes.push_back("ibr");
+    Passes.push_back("mba");
+  }
+  if (EnableIRStringEncryption) {
+    errs() << "add sobf pass\n";
+    MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
+    sobf_added = true;
+  }
   for (auto pass : Passes) {
     //errs() << pass << "\n";
     if (pass == "fla") {
       errs() << "add fla pass\n";
       MPM.addPass(Flattening(EnableIRFlattening));
-    } else if (pass == "sobf") {
+    } else if (pass == "sobf" && !sobf_added) { //不能重复添加这个pass
       errs() << "add sobf pass\n";
       MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
+      sobf_added = true;
     } else if (pass == "ibr") {
       errs() << "add ibr pass\n";
       FunctionPassManager FPM;

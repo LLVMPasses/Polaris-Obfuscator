@@ -8,6 +8,17 @@
 #include <algorithm>
 #include <ctime>
 #include <random>
+
+#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/MDBuilder.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/NoFolder.h"
+#include "llvm/Support/raw_ostream.h"
+#include <set>
+#include <sstream>
+
+
 using namespace llvm;
 namespace polaris {
 
@@ -62,9 +73,19 @@ bool toObfuscate(bool flag, Function &f,
       return true;
     }
 
-    if (f.getName().startswith("llvm."))//混淆内部函数会崩 未知原因 先这样处理吧
+    //过滤混淆自身产生的什么函数
+    if (f.getName().startswith("ollvm")){
       return false;
-    
+    }
+    //混淆内部函数会崩 未知原因 先这样处理吧
+    if (f.getName().startswith("llvm.")){
+      return false;
+    }
+    //同上
+    if (f.getLinkage() == llvm::GlobalValue::InternalLinkage) { 
+      return false;
+    }
+
     //返回默认值
     return flag;
 }
@@ -141,4 +162,135 @@ void demoteRegisters(Function *f) {
   for (unsigned int i = 0; i < tmpPhi.size(); i++)
     DemotePHIToStack(tmpPhi.at(i), f->begin()->getTerminator());
 }
+
+
+// Shamefully borrowed from ../Scalar/RegToMem.cpp :(
+  bool valueEscapes(Instruction *Inst) {
+    BasicBlock *BB = Inst->getParent();
+    for (Value::use_iterator UI = Inst->use_begin(), E = Inst->use_end(); UI != E;
+         ++UI) {
+      Instruction *I = cast<Instruction>(*UI);
+      if (I->getParent() != BB || isa<PHINode>(I)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  void fixStack(Function *f) {
+    // Try to remove phi node and demote reg to stack
+    SmallVector<PHINode *, 8> tmpPhi;
+    SmallVector<Instruction *, 32> tmpReg;
+    BasicBlock *bbEntry = &*f->begin();
+    // Find first non-alloca instruction and create insertion point. This is
+    // safe if block is well-formed: it always have terminator, otherwise
+    // we'll get and assertion.
+    BasicBlock::iterator I = bbEntry->begin();
+    while (isa<AllocaInst>(I))
+      ++I;
+    Instruction *AllocaInsertionPoint = &*I;
+    do {
+      tmpPhi.clear();
+      tmpReg.clear();
+      for (BasicBlock &i : *f) {
+        for (Instruction &j : i) {
+          if (isa<PHINode>(&j)) {
+            PHINode *phi = cast<PHINode>(&j);
+            tmpPhi.emplace_back(phi);
+            continue;
+          }
+          if (!(isa<AllocaInst>(&j) && j.getParent() == bbEntry) &&
+              (valueEscapes(&j) || j.isUsedOutsideOfBlock(&i))) {
+            tmpReg.emplace_back(&j);
+            continue;
+          }
+        }
+      }
+  #if LLVM_VERSION_MAJOR >= 19
+      for (Instruction *I : tmpReg)
+        DemoteRegToStack(*I, false, AllocaInsertionPoint->getIterator());
+      for (PHINode *P : tmpPhi)
+        DemotePHIToStack(P, AllocaInsertionPoint->getIterator());
+  #else
+      for (Instruction *I : tmpReg)
+        DemoteRegToStack(*I, false, AllocaInsertionPoint);
+      for (PHINode *P : tmpPhi)
+        DemotePHIToStack(P, AllocaInsertionPoint);
+  #endif
+    } while (tmpReg.size() != 0 || tmpPhi.size() != 0);
+  }
+
+
+  void FixBasicBlockConstantExpr(BasicBlock *BB) {
+    // Replace ConstantExpr with equal instructions
+    // Otherwise replacing on Constant will crash the compiler
+    // Things to note:
+    // - Phis must be placed at BB start so CEs must be placed prior to current
+    // BB
+    assert(!BB->empty() && "BasicBlock is empty!");
+    assert(BB->getParent() && "BasicBlock must be in a Function!");
+    Instruction *FunctionInsertPt =
+        &*(BB->getParent()->getEntryBlock().getFirstInsertionPt());
+
+    for (Instruction &I : *BB) {
+      if (isa<LandingPadInst>(I) || isa<FuncletPadInst>(I) ||
+          isa<IntrinsicInst>(I))
+        continue;
+      for (unsigned int i = 0; i < I.getNumOperands(); i++)
+        if (ConstantExpr *C = dyn_cast<ConstantExpr>(I.getOperand(i))) {
+          IRBuilder<NoFolder> IRB(&I);
+          if (isa<PHINode>(I))
+            IRB.SetInsertPoint(FunctionInsertPt);
+          Instruction *Inst = IRB.Insert(C->getAsInstruction());
+          I.setOperand(i, Inst);
+        }
+    }
+  }
+
+  void FixFunctionConstantExpr(Function *Func) {
+    // Replace ConstantExpr with equal instructions
+    // Otherwise replacing on Constant will crash the compiler
+    for (BasicBlock &BB : *Func)
+      FixBasicBlockConstantExpr(&BB);
+  }
+
+  void turnOffOptimization(Function *f) {
+    f->removeFnAttr(Attribute::AttrKind::MinSize);
+    f->removeFnAttr(Attribute::AttrKind::OptimizeForSize);
+    if (!f->hasFnAttribute(Attribute::AttrKind::OptimizeNone) &&
+        !f->hasFnAttribute(Attribute::AttrKind::AlwaysInline)) {
+      f->addFnAttr(Attribute::AttrKind::OptimizeNone);
+      f->addFnAttr(Attribute::AttrKind::NoInline);
+    }
+  }
+
+  static inline std::vector<std::string> splitString(std::string str) {
+    std::stringstream ss(str);
+    std::string word;
+    std::vector<std::string> words;
+    while (ss >> word)
+      words.emplace_back(word);
+    return words;
+  }
+
+  bool AreUsersInOneFunction(GlobalVariable *GV) {
+    SmallPtrSet<Function *, 6> userFunctions;
+    for (User *U : GV->users()) {
+      if (Instruction *I = dyn_cast<Instruction>(U)) {
+        userFunctions.insert(I->getFunction());
+      } else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(U)) {
+        for (User *U2 : CE->users()) {
+          if (Instruction *I = dyn_cast<Instruction>(U2)) {
+            userFunctions.insert(I->getFunction());
+          }
+        }
+      } else {
+        return false;
+      }
+    }
+    return userFunctions.size() <= 1;
+  }
+
 } // namespace polaris
+
+
+

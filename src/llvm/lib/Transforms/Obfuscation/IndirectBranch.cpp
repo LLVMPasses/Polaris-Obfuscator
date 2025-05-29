@@ -24,6 +24,10 @@ void IndirectBranch::process(Function &F) {
     }
   }
 
+  // 如果没有分支指令需要处理，则提前返回
+  if (Brs.empty())
+    return;
+
   std::map<BasicBlock *, IndirectBlockInfo> Map;
   std::vector<Constant *> Values;
   for (BranchInst *Br : Brs) {
@@ -50,8 +54,26 @@ void IndirectBranch::process(Function &F) {
   }
   ArrayType *AT = ArrayType::get(
       Type::getInt8Ty(F.getContext())->getPointerTo(), Map.size());
+
+  // 修复模板函数的问题：模板函数放在comdat节，最终只保留一实例，如果丢弃后BlockAddress::get(Info.BB)对应的函数引用丢失就没法链接
+  // 修复办法：创建独立comdat
+  std::string GVName = "__addr_table_" + F.getName().str();
+
   GlobalVariable *AddrTable = new GlobalVariable(
-      *(F.getParent()), AT, false, GlobalValue::PrivateLinkage, NULL);
+      *(F.getParent()), AT, false, F.getLinkage(), NULL, GVName);
+
+  // 继承函数的 COMDAT 和可见性属性
+  if (F.hasComdat()) {
+    AddrTable->setComdat(F.getComdat());
+  }
+  AddrTable->setVisibility(F.getVisibility());
+  AddrTable->setDLLStorageClass(F.getDLLStorageClass());
+  // 如果函数具有内部链接，确保表也具有内部链接
+  if (F.hasInternalLinkage() || F.hasPrivateLinkage()) {
+    AddrTable->setLinkage(GlobalValue::PrivateLinkage);
+  }
+
+
   for (auto Iter = Map.begin(); Iter != Map.end(); Iter++) {
     IndirectBlockInfo &Info = Iter->second;
     assert(Iter->first == Info.BB);
@@ -109,6 +131,7 @@ void IndirectBranch::process(Function &F) {
 PreservedAnalyses IndirectBranch::run(Function &F,
                                       FunctionAnalysisManager &AM) {
   if (toObfuscate(EnabledFlag,F,"ibr")) {
+    errs() << "try idr: "<<F.getName().str()<<"\n";
     process(F);
     return PreservedAnalyses::none();
   }

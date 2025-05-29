@@ -87,6 +87,7 @@ struct LowerSwitchWrapper : LowerSwitchPass {
 };
 
 ModulePassManager buildObfuscationPipeline() {
+  errs() << "OLLVM-ND Passes Pipeline\n";
   ModulePassManager MPM;
   bool sobf_added = false;
   if (Passes.empty()) {
@@ -98,11 +99,7 @@ ModulePassManager buildObfuscationPipeline() {
     Passes.push_back("ibr");
     Passes.push_back("mba");
   }
-  if (EnableIRStringEncryption) {
-    errs() << "add sobf pass\n";
-    MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
-    sobf_added = true;
-  }
+
   for (auto pass : Passes) {
     //errs() << pass << "\n";
     if (pass == "fla") {
@@ -145,6 +142,12 @@ ModulePassManager buildObfuscationPipeline() {
       FPM.addPass(LinearMBA(EnableIRLinearMBA));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     }
+  }
+
+  if (EnableIRStringEncryption&& !sobf_added) {
+    errs() << "add sobf pass\n";
+    MPM.addPass(GlobalsEncryption(EnableIRStringEncryption));
+    sobf_added = true;
   }
   return MPM;
 }

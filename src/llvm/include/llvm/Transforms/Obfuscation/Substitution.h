@@ -16,6 +16,9 @@ using namespace llvm;
 namespace polaris {
 
 struct Substitution : PassInfoMixin<Substitution> {
+  bool EnabledFlag;
+  Substitution() : EnabledFlag(false) {}
+  explicit Substitution(bool Enabled) : EnabledFlag(Enabled) {}
 
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
 

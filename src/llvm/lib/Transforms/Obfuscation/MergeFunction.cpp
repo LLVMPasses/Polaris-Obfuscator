@@ -111,7 +111,7 @@ void MergeFunction::process(Module &M) {
   ClonedCodeInfo CodeInfo;
   IRBuilder<> IRB(M.getContext());
   for (Function &F : M) {
-    if (EnabledFlag || readAnnotate(F).find("merge") != std::string::npos) {
+    if (toObfuscate(EnabledFlag,F,"merge")) {
       VMap.clear(), Returns.clear();
       std::vector<Type *> ArgTypes;
       Type *RetType = F.getReturnType();

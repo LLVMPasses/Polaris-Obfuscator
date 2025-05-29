@@ -69,6 +69,10 @@ static cl::opt<bool> EnableIRBogusControlFlow("irobf-bcf", cl::init(false), cl::
 static cl::alias AliasEnableIRBogusControlFlow("bcf", cl::desc("Alias for irobf-bcf"),
     cl::aliasopt(EnableIRBogusControlFlow));
 
+//控制流混淆-指令替换
+static cl::opt<bool> EnableIRSubstitution("irobf-sub", cl::init(false), cl::NotHidden,
+    cl::desc("Enable IR substitution."), cl::ZeroOrMore);
+
 //控制流混淆-线性MBA替换
 static cl::opt<bool> EnableIRLinearMBA("irobf-mba", cl::init(false), cl::NotHidden,
     cl::desc("Enable IR Linear MBA substitution."), cl::ZeroOrMore);
@@ -130,7 +134,7 @@ ModulePassManager buildObfuscationPipeline() {
     } else if (pass == "sub") {
       errs() << "add sub pass\n";
       FunctionPassManager FPM;
-      FPM.addPass(Substitution());
+      FPM.addPass(Substitution(EnableIRSubstitution));
       MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     } else if (pass == "merge") {
       errs() << "add merge pass\n";

@@ -16,7 +16,7 @@ PreservedAnalyses CustomCC::run(Module &M, ModuleAnalysisManager &AM) {
       CallingConv::Obfu4, CallingConv::Obfu5, CallingConv::Obfu6,
       CallingConv::Obfu7, CallingConv::Obfu8};
   for (Function &F : M) {
-    if (toObfuscate(EnabledFlag,F,"customcc")) {
+    if (readAnnotate(F).find("customcc") != std::string::npos) {
       errs() << F.getName() << '\n';
       CallingConv::ID CC = ObfuCCs[getRandomNumber() % std::size(ObfuCCs)];
       F.setCallingConv(CC);

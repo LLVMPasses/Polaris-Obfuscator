@@ -13,7 +13,7 @@ namespace polaris {
 static IRBuilder<> *builder = nullptr;
 
 PreservedAnalyses Substitution::run(Function &F, FunctionAnalysisManager &AM) {
-  if (toObfuscate(EnabledFlag,f,"sub")) {
+  if (toObfuscate(EnabledFlag,F,"sub")) {
     builder = new IRBuilder<>(F.getContext());
     for (BasicBlock &BB : F) {
       std::vector<Instruction *> origInst;

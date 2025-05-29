@@ -108,7 +108,7 @@ void IndirectBranch::process(Function &F) {
 }
 PreservedAnalyses IndirectBranch::run(Function &F,
                                       FunctionAnalysisManager &AM) {
-  if (toObfuscate(EnabledFlag,f,"ibr")) {
+  if (toObfuscate(EnabledFlag,F,"ibr")) {
     process(F);
     return PreservedAnalyses::none();
   }

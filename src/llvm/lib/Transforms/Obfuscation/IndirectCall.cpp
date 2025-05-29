@@ -10,7 +10,7 @@
 using namespace llvm;
 namespace polaris {
 PreservedAnalyses IndirectCall::run(Function &F, FunctionAnalysisManager &AM) {
-  if ( toObfuscate(EnabledFlag,f,"icall")) {
+  if ( toObfuscate(EnabledFlag,F,"icall")) {
     process(F);
     return PreservedAnalyses::none();
   }

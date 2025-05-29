@@ -396,13 +396,13 @@ void Flattening::doFlatten(Function *f, int seed, Function *updateFunc) {
 
 PreservedAnalyses Flattening::run(Module &M, ModuleAnalysisManager &AM) {
   Function *updateFunc = buildUpdateKeyFunc(&M);
-  for (Function &f : M) {
-    if (&f == updateFunc)
+  for (Function &F : M) {
+    if (&F == updateFunc)
       continue;
-    if ( toObfuscate(EnabledFlag,f,"fla")) {
+    if ( toObfuscate(EnabledFlag,F,"fla")) {
       
-      errs() << "try flattern: "<<f.getName().str()<<"\n";
-      doFlatten(&f, 0, updateFunc);
+      errs() << "try flattern: "<<F.getName().str()<<"\n";
+      doFlatten(&F, 0, updateFunc);
     }
   }
 

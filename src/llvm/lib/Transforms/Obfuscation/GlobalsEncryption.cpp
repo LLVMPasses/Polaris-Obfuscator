@@ -71,21 +71,21 @@ extern ManagedStatic<CryptoUtils> cryptoutils;
 #define KEY_LEN 4
 static_assert(KEY_LEN > 0 && KEY_LEN <= 4);
 PreservedAnalyses GlobalsEncryption::run(Module &M, ModuleAnalysisManager &AM) {
-  try{
+  //try{
     process(M);
     return PreservedAnalyses::none();
-  }catch (std::exception &e) {
-    if(IgnoreStrObfError){
-      errs() << "OLLVM-ND: StringEncrypt Pass failed: " << e.what() << "\n";
-    }
-    else{
-        // 通过 LLVM 的内置函数引发崩溃，保留完整堆栈
-        std::string ErrorMsg = "Fatal error during StringEncrypt transformation: ";
-        ErrorMsg += e.what();
-        report_fatal_error(Twine(ErrorMsg), false);
-    }
-    return PreservedAnalyses::all();  // 保留所有分析，表示无变化
-  }
+  //}catch (std::exception &e) {
+  //  if(IgnoreStrObfError){
+  //    errs() << "OLLVM-ND: StringEncrypt Pass failed: " << e.what() << "\n";
+  //  }
+  //  else{
+  //      // 通过 LLVM 的内置函数引发崩溃，保留完整堆栈
+  //      std::string ErrorMsg = "Fatal error during StringEncrypt transformation: ";
+  //      ErrorMsg += e.what();
+  //      report_fatal_error(Twine(ErrorMsg), false);
+  //  }
+  //  return PreservedAnalyses::all();  // 保留所有分析，表示无变化
+  //}
 }
 
 bool hasApplePtrauth(Module *M) {
